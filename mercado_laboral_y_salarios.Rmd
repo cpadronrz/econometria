@@ -14,6 +14,8 @@ Importamos las librerías que vamos a utilizar
 ```{r}
 library(pxR)
 library(tidyverse)
+library(stringr)
+library(dplyr)
 ```
 
 Cargamos la base de datos que vamos a utilizar
@@ -47,13 +49,20 @@ prod_filtrado <- prod |>
   filter(Niveles.y.Tasas == "Variación anual") |> 
   filter(Tipo.de.dato == "Datos ajustados de estacionalidad y calendario") |>
   filter(Ratios.relevantes == "Productividad por puesto de trabajo equivalente a tiempo completo") |>
+  
   mutate(ANO = as.numeric(substr(Periodo, 1, 4))) |>
   mutate(TRIM = as.numeric(substr(Periodo, 6, 7))) |>
   mutate(tiempo = ANO + TRIM * 0.25 - 0.25) |>
+  
+  filter(ANO >= 2008 & ANO <= 2024) |>
+  
   arrange(tiempo) |>
   select(Periodo, ANO, TRIM, tiempo, value)
 ```
 
+```{r}
+range(prod_filtrado$ANO)
+```
 
 Datos de PIB Demanda - Volumen encadenado
 
@@ -66,52 +75,130 @@ names(pib)
 ```{r}
 if ("Niveles.y.tasas" %in% names(pib)) table(pib$Niveles.y.tasas)
 if ("Tipo.de.dato" %in% names(pib)) table(pib$Tipo.de.dato)
+if("Agregados.macroeconómicos" %in% names(pib)) table(pib$Agregados.macroeconómicos)
+```
+
+```{r}
+pib_limpio <- pib |>
+  filter(str_detect(Niveles.y.tasas, "Variación anual")) |> 
+  filter(str_detect(Tipo.de.dato, "ajustados")) |>
+
+  filter(str_detect(Agregados.macroeconómicos, regex("PRODUCTO", ignore_case = TRUE))) |>
+  filter(str_detect(Agregados.macroeconómicos, regex("INTERIOR", ignore_case = TRUE))) |>
+  filter(!str_detect(Agregados.macroeconómicos, regex("Demanda", ignore_case = TRUE))) |> 
+
+  mutate(ANO = as.numeric(substr(Periodo, 1, 4)),
+         TRIM = as.numeric(substr(Periodo, 6, 7)),
+         tiempo = ANO + TRIM * 0.25 - 0.25) |>
+  
+  filter(ANO >= 2008 & ANO <= 2024) |>
+  
+  arrange(tiempo) |>
+
+  distinct(tiempo, .keep_all = TRUE) |>
+  select(Periodo, ANO, TRIM, tiempo, pib_value = value)
 ```
 
 
 ```{r}
-# Filtrado del PIB con los nombres exactos de tu última captura
-pib_limpio <- pib |>
-  filter(Niveles.y.tasas == "Variación anual") |> 
-  filter(Tipo.de.dato == "Datos ajustados de estacionalidad y calendario") |>
-  filter(Agregados.macroeconómicos == "PRODUCTO INTERIOR BRUTO A PRECIOS DE MERCADO") |>
-  mutate(ANO = as.numeric(substr(Periodo, 1, 4))) |>
-  mutate(TRIM = as.numeric(substr(Periodo, 6, 7))) |>
-  mutate(tiempo = ANO + TRIM * 0.25 - 0.25) |>
-  arrange(tiempo) |>
-  select(Periodo, ANO, TRIM, tiempo, pib_value = value)
+range(pib_limpio$ANO)
 ```
 
 
 Datos de Tasa de Paro EPA 
 
 ```{r}
-url3 <- "https://www.ine.es/jaxiT3/files/t/es/px/4247.px?nocab=1"
+url3 <- "https://www.ine.es/jaxiT3/files/t/es/px/65334.px?nocab=1"
 paro<-as.data.frame(read.px(url3), stringsAsFactor=FALSE)  
 names(paro)
 ```
 
+
 ```{r}
-# Filtrado de la Tasa de Paro (Tabla 4247)
 paro_limpio <- paro |>
-  filter(Edad == "Total") |> 
+  mutate(across(where(is.character), stringr::str_trim)) |>
+  
+  filter(str_detect(Comunidades.y.Ciudades.Autónomas, "Total Nacional")) |> 
   filter(Sexo == "Ambos sexos") |>
-  filter(Comunidades.y.Ciudades.Autónomas == "Total Nacional") |>
-  mutate(ANO = as.numeric(substr(Periodo, 1, 4))) |>
-  mutate(TRIM = as.numeric(substr(Periodo, 6, 7))) |>
-  mutate(tiempo = ANO + TRIM * 0.25 - 0.25) |>
+  filter(Edad == "Total") |>
+
+  mutate(ANO = as.numeric(substr(Periodo, 1, 4)),
+         TRIM = as.numeric(substr(Periodo, 6, 7)),
+         tiempo = ANO + TRIM * 0.25 - 0.25) |>
+  
+  filter(ANO >= 2008 & ANO <= 2024) |>
+
   arrange(tiempo) |>
   select(Periodo, ANO, TRIM, tiempo, tasa_paro = value)
+
 ```
 
 
+```{r}
+range(paro_limpio$ANO)
+```
+
+Datos de Salarios
+
+```{r}
+url4 <- "https://www.ine.es/jaxiT3/files/t/es/px/6061.px?nocab=1"
+salarios <- as.data.frame(read.px(url4), stringsAsFactors=FALSE)
+names(salarios)
+```
 
 
+```{r}
+salarios_euros <- salarios |>
+  mutate(across(everything(), as.character)) |>
+  mutate(across(everything(), stringr::str_squish)) |>
+
+  rename(comp = 2, sect = 3, lug = 4) |>
+  
+  filter(grepl("Nacional", lug)) |> 
+  filter(grepl("Industria", sect)) |> 
+  filter(grepl("laboral total", comp)) |>
+  
+  mutate(value = as.numeric(value),
+         ANO = as.numeric(substr(Periodo, 1, 4)),
+         TRIM = as.numeric(substr(Periodo, 6, 7)),
+         tiempo = ANO + TRIM * 0.25 - 0.25) |>
+  
+  filter(ANO >= 2008 & ANO <= 2024) |>
+  arrange(tiempo) |>
+  select(Periodo, ANO, TRIM, tiempo, salario_eur = value)
+```
+
+```{r}
+range(salarios_euros$ANO)
+```
 
 
+Unimos los data frame
 
+```{r}
 
+df_final <- pib_limpio |>
+  inner_join(prod_filtrado, by = "tiempo") |>
+  inner_join(paro_limpio, by = "tiempo") |>
+  select(
+    fecha = Periodo.x, 
+    tiempo, 
+    pib = pib_value, 
+    prod = value, 
+    paro = tasa_paro
+  )
 
+```
+
+Comprobamos
+
+```{r}
+head(df_final)
+```
+
+```{r}
+tail(df_final)
+```
 
 
 
