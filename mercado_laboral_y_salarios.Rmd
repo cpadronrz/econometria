@@ -1,0 +1,25 @@
+---
+title: "Mercado laboral y salarios"
+output: html_document
+date: "2026-03-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Importamos las librerías que vamos a utilizar
+
+```{r}
+library(pxR)
+library(tidyverse)
+```
+
+
+
+
+
+
+
+
