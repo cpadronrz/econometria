@@ -16,6 +16,101 @@ library(pxR)
 library(tidyverse)
 ```
 
+Cargamos la base de datos que vamos a utilizar
+
+Datos de Productividad y Costes Laborales 
+
+```{r}
+url1 <- "https://www.ine.es/jaxiT3/files/t/es/px/32938.px?nocab=1"
+prod<-as.data.frame(read.px(url1), stringsAsFactor=FALSE)  
+names(prod)
+```
+
+Miramos los datos para filtrar. Buscamos primero los nombres de las distintas columnas.
+
+```{r}
+unique(prod$Niveles.y.Tasas)
+unique(prod$Tipo.de.dato)
+unique(prod$Ratios.relevantes)
+```
+
+
+```{r}
+if ("Niveles.y.Tasas" %in% names(prod)) table(prod$Niveles.y.Tasas)
+if ("Tipo.de.dato" %in% names(prod)) table(prod$Tipo.de.dato)
+if ("Ratios.relevantes" %in% names(prod)) table(prod$Ratios.relevantes)
+```
+
+
+```{r}
+prod_filtrado <- prod |>
+  filter(Niveles.y.Tasas == "Variación anual") |> 
+  filter(Tipo.de.dato == "Datos ajustados de estacionalidad y calendario") |>
+  filter(Ratios.relevantes == "Productividad por puesto de trabajo equivalente a tiempo completo") |>
+  mutate(ANO = as.numeric(substr(Periodo, 1, 4))) |>
+  mutate(TRIM = as.numeric(substr(Periodo, 6, 7))) |>
+  mutate(tiempo = ANO + TRIM * 0.25 - 0.25) |>
+  arrange(tiempo) |>
+  select(Periodo, ANO, TRIM, tiempo, value)
+```
+
+
+Datos de PIB Demanda - Volumen encadenado
+
+```{r}
+url2 <- "https://www.ine.es/jaxiT3/files/t/es/px/30678.px?nocab=1"
+pib<-as.data.frame(read.px(url2), stringsAsFactor=FALSE)  
+names(pib)
+```
+
+```{r}
+if ("Niveles.y.tasas" %in% names(pib)) table(pib$Niveles.y.tasas)
+if ("Tipo.de.dato" %in% names(pib)) table(pib$Tipo.de.dato)
+```
+
+
+```{r}
+# Filtrado del PIB con los nombres exactos de tu última captura
+pib_limpio <- pib |>
+  filter(Niveles.y.tasas == "Variación anual") |> 
+  filter(Tipo.de.dato == "Datos ajustados de estacionalidad y calendario") |>
+  filter(Agregados.macroeconómicos == "PRODUCTO INTERIOR BRUTO A PRECIOS DE MERCADO") |>
+  mutate(ANO = as.numeric(substr(Periodo, 1, 4))) |>
+  mutate(TRIM = as.numeric(substr(Periodo, 6, 7))) |>
+  mutate(tiempo = ANO + TRIM * 0.25 - 0.25) |>
+  arrange(tiempo) |>
+  select(Periodo, ANO, TRIM, tiempo, pib_value = value)
+```
+
+
+Datos de Tasa de Paro EPA 
+
+```{r}
+url3 <- "https://www.ine.es/jaxiT3/files/t/es/px/4247.px?nocab=1"
+paro<-as.data.frame(read.px(url3), stringsAsFactor=FALSE)  
+names(paro)
+```
+
+```{r}
+# Filtrado de la Tasa de Paro (Tabla 4247)
+paro_limpio <- paro |>
+  filter(Edad == "Total") |> 
+  filter(Sexo == "Ambos sexos") |>
+  filter(Comunidades.y.Ciudades.Autónomas == "Total Nacional") |>
+  mutate(ANO = as.numeric(substr(Periodo, 1, 4))) |>
+  mutate(TRIM = as.numeric(substr(Periodo, 6, 7))) |>
+  mutate(tiempo = ANO + TRIM * 0.25 - 0.25) |>
+  arrange(tiempo) |>
+  select(Periodo, ANO, TRIM, tiempo, tasa_paro = value)
+```
+
+
+
+
+
+
+
+
 
 
 
