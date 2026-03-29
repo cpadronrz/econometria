@@ -1,0 +1,166 @@
+---
+title: "Análisis descriptivo"
+output: html_document
+date: "2026-03-29"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Cargamos las librerías que vamos a utilizar
+
+```{r}
+library(ggplot2)
+library(corrplot)
+```
+
+
+```{r}
+datos <- read_csv("base.csv")
+```
+
+```{r}
+str(datos)
+```
+
+```{r}
+summary(datos)
+```
+
+```{r}
+dim(datos)
+```
+
+Tenemos 6 variables y 64 observaciones.
+
+```{r}
+which(is.na(datos))
+```
+
+No hay valores missing
+
+# Estadísticos descriptivos
+
+Realizamos el Análisis Estadístico Descriptivo Univariante
+
+## Variable dependiente: salario
+
+Analizamos el salario
+
+```{r}
+summary(datos$salario)
+```
+
+```{r}
+dd<-density(datos$salario)
+moda_dd<-dd$x[which(dd$y==max(dd$y))]
+moda_dd
+```
+
+El salario medio es 2602 y el mediano de 2584. El salario modal es de 2490,605.
+El salario con valor mínimo es de 2342 y el máximo de 3146 euros.
+
+Distribución de los salarios.
+
+```{r}
+hist(datos$salario, breaks = 15,
+     main = "Distribución de los salarios",
+     xlab = "Salarios", ylab = "Frecuencia")
+```
+
+```{r}
+ggplot(datos, aes(x = factor(fecha), y = salario, fill = salario > 0)) +
+  geom_col() +
+  scale_fill_manual(values = c("seagreen"), guide = "none") +
+  labs(
+    title = "Evolución Trimestral del Salario Medio (2008-2024)",
+    x = "Trimestre (AñoT)",
+    y = "Valor Salario (€)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, size = 8))
+```
+
+Como no se aprecia bien en que momento se alcanza el salario mínimo, lo comprobamos
+
+```{r}
+datos[which(datos$salario == min(datos$salario)),]
+```
+
+## Variables explicativas
+
+Llevamos a cabo un análisis descriptivo multivariante con estas variables
+
+```{r}
+ggplot(datos, aes(x = factor(fecha), y = pib, fill = pib > 0)) +
+  geom_col() +
+  scale_fill_manual(values = c("firebrick", "seagreen"), guide = "none") +
+  labs(
+    title = "Evolución Trimestral del PIB (2008-2024)",
+    x = "Trimestre (AñoT)",
+    y = "Tasa Variación PIB (%)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, size = 8))
+```
+
+```{r}
+ggplot(datos, aes(x = factor(fecha), y = prod, fill = prod > 0)) +
+  geom_col() +
+  scale_fill_manual(values = c("firebrick", "seagreen"), guide = "none") +
+  labs(
+    title = "Evolución Trimestral del Productividad (2008-2024)",
+    x = "Trimestre (AñoT)",
+    y = "Tasa Variación Productividad (%)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, size = 8))
+```
+
+
+```{r}
+ggplot(datos, aes(x = factor(fecha), y = paro, fill = paro > 0)) +
+  geom_col() +
+  scale_fill_manual(values = c("seagreen"), guide = "none") +
+  labs(
+    title = "Evolución Trimestral del Paro (2008-2024)",
+    x = "Trimestre (AñoT)",
+    y = "Tasa de Paro (%)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, size = 8))
+```
+
+Variable temporal: desde 2008T1 a 2023T4
+
+Tasa variación trimestral del PIB: 
+- Mínimo -20.8828 en 2020T2
+- Máximo 21.3945 en 2021T2
+
+Tasa variación trimestral de la productividad:
+- Mínimo -5.32220 en 2020T4
+- Máximo 4.31170 en 2009T4
+
+Tasa de Paro:
+- Mínimo 9.60 en 2008T1
+- Máximo 26.94 en 2013T1
+
+Salario medio: 
+- Mínimo 2342  en 2008T1
+- Máximo 3146  en 2023T4
+
+
+## Correlaciones
+
+
+```{r}
+mcor <- cor(datos[, -1])
+corrplot(mcor)
+```
+
+```{r}
+corrplot(mcor,method = "number")
+```
+
+
