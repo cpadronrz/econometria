@@ -148,7 +148,7 @@ names(salarios)
 
 
 ```{r}
-salarios_euros <- salarios |>
+salarios_limpio <- salarios |>
   mutate(across(everything(), as.character)) |>
   mutate(across(everything(), stringr::str_squish)) |>
 
@@ -169,7 +169,7 @@ salarios_euros <- salarios |>
 ```
 
 ```{r}
-range(salarios_euros$ANO)
+range(salarios_limpio$ANO)
 ```
 
 
@@ -180,12 +180,14 @@ Unimos los data frame
 df_final <- pib_limpio |>
   inner_join(prod_filtrado, by = "tiempo") |>
   inner_join(paro_limpio, by = "tiempo") |>
+  inner_join(salarios_limpio, by = "tiempo") |>
   select(
     fecha = Periodo.x, 
     tiempo, 
     pib = pib_value, 
     prod = value, 
-    paro = tasa_paro
+    paro = tasa_paro,
+    salario = salario_eur
   )
 
 ```
