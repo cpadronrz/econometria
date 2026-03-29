@@ -30,12 +30,6 @@ names(prod)
 
 Miramos los datos para filtrar. Buscamos primero los nombres de las distintas columnas.
 
-```{r}
-unique(prod$Niveles.y.Tasas)
-unique(prod$Tipo.de.dato)
-unique(prod$Ratios.relevantes)
-```
-
 
 ```{r}
 if ("Niveles.y.Tasas" %in% names(prod)) table(prod$Niveles.y.Tasas)
@@ -148,24 +142,26 @@ names(salarios)
 
 
 ```{r}
-salarios_limpio <- salarios |>
-  mutate(across(everything(), as.character)) |>
-  mutate(across(everything(), stringr::str_squish)) |>
-
-  rename(comp = 2, sect = 3, lug = 4) |>
+salarios_limpio <- salarios |> 
+  mutate(across(everything(), as.character)) |> 
+  mutate(across(everything(), stringr::str_squish)) |> 
   
-  filter(grepl("Nacional", lug)) |> 
-  filter(grepl("Industria", sect)) |> 
-  filter(grepl("laboral total", comp)) |>
+  rename(comp = 2, sect = 3, lug = 4) |> 
   
-  mutate(value = as.numeric(value),
-         ANO = as.numeric(substr(Periodo, 1, 4)),
-         TRIM = as.numeric(substr(Periodo, 6, 7)),
-         tiempo = ANO + TRIM * 0.25 - 0.25) |>
+  filter(lug == "Total Nacional") |> 
+  filter(grepl("^B_S", sect)) |> 
+  filter(comp == "Coste laboral total") |> 
   
-  filter(ANO >= 2008 & ANO <= 2024) |>
-  arrange(tiempo) |>
-  select(Periodo, ANO, TRIM, tiempo, salario_eur = value)
+  mutate(
+    salario_eur = as.numeric(value),
+    ANO = as.numeric(substr(Periodo, 1, 4)),
+    TRIM = as.numeric(substr(Periodo, 6, 7)),
+    tiempo = ANO + TRIM * 0.25 - 0.25
+  ) |> 
+  
+  filter(ANO >= 2008 & ANO <= 2024) |> 
+  arrange(tiempo) |> 
+  select(Periodo, ANO, TRIM, tiempo, salario_eur)
 ```
 
 ```{r}
