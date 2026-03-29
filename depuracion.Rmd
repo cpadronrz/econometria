@@ -1,0 +1,101 @@
+---
+title: "Depuracion"
+output: html_document
+date: "2026-03-29"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+datos <- read_csv("base.csv")
+```
+
+```{r}
+str(datos)
+```
+
+```{r}
+summary(datos)
+```
+
+```{r}
+dim(datos)
+```
+
+Tenemos 6 variables y 64 observaciones.
+
+```{r}
+which(is.na(datos))
+```
+
+No hay valores missing
+
+# Estadísticos descriptivos
+
+Realizamos el Análisis Estadístico Descriptivo Univariante
+
+## Variable dependiente: salario
+
+Analizamos el salario
+
+```{r}
+summary(datos$salario)
+```
+
+```{r}
+dd<-density(datos$salario)
+moda_dd<-dd$x[which(dd$y==max(dd$y))]
+moda_dd
+```
+
+El salario medio es 2602 y el mediano de 2584. El salario modal es de 2490,605.
+El salario con valor mínimo es de 2342 y el máximo de 3146 euros.
+
+Distribución de los salarios.
+
+```{r}
+hist(datos$salario, breaks = 15,
+     main = "Distribución de los salarios",
+     xlab = "Salarios", ylab = "Frecuencia")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
