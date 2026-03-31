@@ -164,5 +164,46 @@ corrplot(mcor)
 corrplot(mcor,method = "number")
 ```
 
+# Evolución temporal
+
+Convertimos las columnas del dataframe en objetos ts
+
+```{r}
+salario_ts <- ts(datos$salario, start = c(2008, 1), frequency = 4)
+pib_ts     <- ts(datos$pib,     start = c(2008, 1), frequency = 4)
+paro_ts    <- ts(datos$paro,    start = c(2008, 1), frequency = 4)
+prod_ts    <- ts(datos$prod,    start = c(2008, 1), frequency = 4)
+```
+
+```{r}
+plot.ts(cbind(salario_ts, pib_ts, paro_ts, prod_ts), 
+        main="Evolución de las variables del Mercado Laboral")
+```
+
+Dispersión
+
+```{r}
+ggplot(datos, aes(x=prod, y=salario)) + geom_point() + geom_smooth(method="lm") +
+  labs(title="Relación Salario vs Productividad")
+```
+
+```{r}
+# Estandarizamos para comparar movimientos relativos
+plot(scale(salario_ts), type = "l", col = "blue", lwd = 2, 
+     main = "Comparativa de Ciclos Económicos (Series Estandarizadas)",
+     ylab = "Desviaciones típicas", xlab = "Año")
+lines(scale(pib_ts), col = "darkgreen", lwd = 2)
+lines(scale(paro_ts), col = "red", lwd = 2)
+lines(scale(prod_ts), col = "orange", lwd = 2)
+
+# Añadimos una leyenda para que se entienda el gráfico
+legend("topleft", 
+       legend = c("Salario", "PIB", "Paro", "Productividad"), 
+       col = c("blue", "darkgreen", "red", "orange"), 
+       lty = 1, lwd = 2, bty = "n", cex = 0.8)
+```
+
+
+
 
 

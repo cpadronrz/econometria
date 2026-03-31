@@ -14,6 +14,8 @@ Cargamos las librerías que vamos a utilizar
 library(urca)
 library(tseries)
 library(readr)
+library(lmtest)
+library(car)
 ```
 
 
@@ -190,6 +192,40 @@ grangertest(d_salario ~ d_prod_lag1, order = 1, data = datos_reg)
 ```
 
 La productividad no ayuda a predecir el salario mejor de lo que lo hace el propio pasado del salario por sí solo.
+
+
+# Pruebas de diagnóstico (modelo final)
+
+Normalidad de residuos
+
+```{r}
+shapiro.test(residuals(modelo_mcg))
+```
+
+Homocedasticidad (Breusch-Pagan)
+
+```{r}
+# 1. Extraemos los residuos ponderados (esto es clave en MCG)
+# Los residuos estandarizados en MCG deberían ser homocedásticos
+residuos_ponderados <- residuals(modelo_mcg, type = "pearson")
+
+# 2. Realizamos el test manualmente regresando los residuos al cuadrado
+# contra las variables explicativas originales
+aux_reg <- lm(I(residuos_ponderados^2) ~ d_pib_lag1 + d_paro_lag1 + d_prod_lag1, data = as.data.frame(datos_reg))
+
+# 3. Miramos el p-valor de la F o usamos bptest sobre esta regresión auxiliar
+library(lmtest)
+bptest(aux_reg)
+```
+
+Multicolinealidad (VIF)
+
+```{r}
+vif(modelo_mcg)
+```
+
+
+
 
 
 
