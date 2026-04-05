@@ -105,6 +105,8 @@ Ahora sí se verifica que es estacionaria (se compara con -2.89 pq ya no estamos
 
 # Test de cointegración de Engle-Granger
 
+H0: No estacionarios residuos => No cointegración
+
 Este test sirve para saber si existe una relación de equilibrio real a largo plazo o si la regresión es "espúrea" (falsa)
 
 ```{r}
@@ -229,8 +231,8 @@ qqline(residuos_std, col = "red", lwd = 2)
 Homocedasticidad (Breusch-Pagan)
 
 ```{r}
-# 1. Extraemos los residuos de Pearson (ponderados)
-residuos_p <- residuals(modelo_mcg, type = "pearson")
+# 1. Extraemos los residuos limpios de autocorrelacion y heterocedasticidad
+residuos_p <- residuals(modelo_mcg, type = "normalized")
 
 # 2. Creamos un modelo lineal "ficticio" usando esos residuos como Y
 # Esto le permite a bptest saber qué variables explicativas usar
