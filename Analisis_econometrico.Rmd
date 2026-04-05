@@ -23,7 +23,9 @@ library(car)
 datos <- read_csv("base.csv")
 ```
 
-# Test de estacionariedad
+# Test de estacionariedad (Test de Dicky-Fuller)
+
+Es necesario verificar previamente estacionariedad para evitar caer en regresiones espurias. Si las series son estacionarias, cualquier relación detectada es mucho más probable que sea real y no un accidente del paso del tiempo.
 
 ## Variable salario
 
@@ -35,7 +37,7 @@ summary(ur_salario)
 ```
 0.6978 > -3.45 (valor crítico a 5%) => No rechazas Ho => La serie es NO ESTACIONARIA
 
-B) Como no es estacionaria, probamos con la primera diferencia:
+B) Como no es estacionaria, probamos con la primera diferencia (repetimos el test pero ahora con la serie diferenciada):
 
 ```{r}
 ur_diff_salario <- ur.df(diff(datos$salario), type="drift", selectlags = "AIC", lags = 4)
@@ -56,7 +58,7 @@ summary(ur_pib)
 
 -3.1096 > -3.45 (valor crítico a 5%) => No rechazas Ho => La serie es NO ESTACIONARIA
 
-B) Como no es estacionaria, probamos con la primera diferencia:
+B) Como no es estacionaria, probamos con la primera diferencia (repetimos el test pero ahora con la serie diferenciada):
 
 ```{r}
 ur_diff_pib <- ur.df(diff(datos$pib), type="drift", selectlags = "AIC", lags = 4)
@@ -91,7 +93,7 @@ summary(ur_paro)
 
 -1.8532 > -3.45 (valor crítico a 5%) => No rechazas Ho => La serie es NO ESTACIONARIA
 
-B) Como no es estacionaria, probamos con la primera diferencia:
+B) Como no es estacionaria, probamos con la primera diferencia (repetimos el test pero ahora con la serie diferenciada):
 
 ```{r}
 ur_diff_paro <- ur.df(diff(datos$paro), type="drift", selectlags = "AIC", lags = 4)
@@ -125,7 +127,7 @@ test_coint <- ur.df(residuos_lp, type = "none", selectlags = "BIC")
 summary(test_coint)
 ```
 
-Como -1.6525 > -1.95, NO RECHAZAMOS la hipótesis nula de raíz unitaria en los residuos. Esto indica que los residuos no son estacionarios, por lo que las variables NO están cointegradas.
+Como -1.6525 > -1.95, NO RECHAZAMOS la hipótesis nula de raíz unitaria en los residuos. Esto indica que los residuos NO son estacionarios, por lo que las variables NO están cointegradas.
 
 ```{r}
 # Modelo en primeras diferencias (Punto 4.7 de tu guía)
@@ -133,7 +135,7 @@ modelo_dif <- lm(diff(salario) ~ diff(pib) + diff(paro) + diff(prod), data = dat
 summary(modelo_dif)
 ```
 
-Punto 5. "Endogeneidad": Las instrucciones sugieren que si la teoría lo justifica, uses retardos como instrumentos. Es muy probable que el salario no reaccione al PIB de hoy, sino al de hace uno o dos trimestres.
+Punto 5. "Endogeneidad": Las instrucciones sugieren que si la teoría lo justifica, usemos retardos como instrumentos. Es muy probable que el salario no reaccione al PIB de hoy, sino al de hace uno o dos trimestres.
 
 # Modelo con retardos
 
@@ -180,42 +182,63 @@ modelo_mcg <- gls(d_salario ~ d_pib_lag1 + d_paro_lag1 + d_prod_lag1,
 summary(modelo_mcg)
 ```
 
-Al aplicar Mínimos Cuadrados Generalizados (MCG), has corregido la estructura del error y ahora aparecen variables estadísticamente significativas
+Al aplicar Mínimos Cuadrados Generalizados (MCG), hemos corregido la estructura del error y ahora aparecen variables estadísticamente significativas
 
 # Test de causalidad de Granger
 
+H0: Los valores pasados de X no ayudan a predecir el valor de Y
+
+¿La productividad causa realmente al salario?
 
 ```{r}
 library(lmtest)
-# ¿La productividad causa realmente al salario?
 grangertest(d_salario ~ d_prod_lag1, order = 1, data = datos_reg)
 ```
 
 La productividad no ayuda a predecir el salario mejor de lo que lo hace el propio pasado del salario por sí solo.
 
 
-# Pruebas de diagnóstico (modelo final)
+# Pruebas de diagnóstico (modelo final) ??
 
 Normalidad de residuos
 
+# Shapiro o Kolmogorov?
+
 ```{r}
-shapiro.test(residuals(modelo_mcg))
+# Extraemos los residuos ponderados (los "limpios")
+res_finales <- residuals(modelo_mcg, type = "normalized")
+
+# Test de Shapiro con los residuos correctos
+shapiro.test(res_finales)
 ```
+
+```{r}
+# Gráfico de Probabilidad Normal
+qqnorm(residuals(modelo_mcg))
+qqline(residuals(modelo_mcg), col = "red")
+```
+
+```{r}
+# Gráfico con residuos estandarizados (es más preciso para diagnóstico)
+residuos_std <- residuals(modelo_mcg, type = "normalized")
+qqnorm(residuos_std, main = "Q-Q Plot de Residuos Normalizados")
+qqline(residuos_std, col = "red", lwd = 2)
+```
+
 
 Homocedasticidad (Breusch-Pagan)
 
 ```{r}
-# 1. Extraemos los residuos ponderados (esto es clave en MCG)
-# Los residuos estandarizados en MCG deberían ser homocedásticos
-residuos_ponderados <- residuals(modelo_mcg, type = "pearson")
+# 1. Extraemos los residuos de Pearson (ponderados)
+residuos_p <- residuals(modelo_mcg, type = "pearson")
 
-# 2. Realizamos el test manualmente regresando los residuos al cuadrado
-# contra las variables explicativas originales
-aux_reg <- lm(I(residuos_ponderados^2) ~ d_pib_lag1 + d_paro_lag1 + d_prod_lag1, data = as.data.frame(datos_reg))
+# 2. Creamos un modelo lineal "ficticio" usando esos residuos como Y
+# Esto le permite a bptest saber qué variables explicativas usar
+modelo_para_test <- lm(residuos_p ~ d_pib_lag1 + d_paro_lag1 + d_prod_lag1, data = as.data.frame(datos_reg))
 
-# 3. Miramos el p-valor de la F o usamos bptest sobre esta regresión auxiliar
+# 3. Aplicamos el test directamente sobre ese modelo
 library(lmtest)
-bptest(aux_reg)
+bptest(modelo_para_test)
 ```
 
 Multicolinealidad (VIF)
