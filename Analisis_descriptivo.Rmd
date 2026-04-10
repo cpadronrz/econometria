@@ -18,28 +18,46 @@ library(readr)
 
 
 ```{r}
-datos <- read_csv("base_productividad.csv")
+datos_prod <- read_csv("base_productividad.csv")
+datos_ebe <- read_csv("base_ebe.csv")
 ```
 
 ```{r}
-str(datos)
+str(datos_prod)
 ```
 
 ```{r}
-summary(datos)
+str(datos_ebe)
+```
+
+
+```{r}
+summary(datos_prod)
 ```
 
 ```{r}
-dim(datos)
+summary(datos_ebe)
 ```
 
-Tenemos 6 variables y 64 observaciones.
+```{r}
+dim(datos_prod)
+```
 
 ```{r}
-which(is.na(datos))
+dim(datos_ebe)
+```
+
+Tenemos 6 variables y 64 observaciones en ambas bases
+
+```{r}
+which(is.na(datos_prod))
 ```
 
 No hay valores missing
+
+```{r}
+which(is.na(datos_ebe))
+```
 
 # Estadísticos descriptivos
 
@@ -50,11 +68,11 @@ Realizamos el Análisis Estadístico Descriptivo Univariante
 Analizamos el salario
 
 ```{r}
-summary(datos$salario)
+summary(datos_prod$salario)
 ```
 
 ```{r}
-dd<-density(datos$salario)
+dd<-density(datos_prod$salario)
 moda_dd<-dd$x[which(dd$y==max(dd$y))]
 moda_dd
 ```
@@ -65,13 +83,13 @@ El salario con valor mínimo es de 2342 y el máximo de 3146 euros.
 Distribución de los salarios.
 
 ```{r}
-hist(datos$salario, breaks = 15,
+hist(datos_prod$salario, breaks = 15,
      main = "Distribución de los salarios",
      xlab = "Salarios", ylab = "Frecuencia")
 ```
 
 ```{r}
-ggplot(datos, aes(x = factor(fecha), y = salario, fill = salario > 0)) +
+ggplot(datos_prod, aes(x = factor(fecha), y = salario, fill = salario > 0)) +
   geom_col() +
   scale_fill_manual(values = c("seagreen"), guide = "none") +
   labs(
@@ -86,7 +104,7 @@ ggplot(datos, aes(x = factor(fecha), y = salario, fill = salario > 0)) +
 Como no se aprecia bien en que momento se alcanza el salario mínimo, lo comprobamos
 
 ```{r}
-datos[which(datos$salario == min(datos$salario)),]
+datos_prod[which(datos_prod$salario == min(datos_prod$salario)),]
 ```
 
 ## Variables explicativas
@@ -94,7 +112,7 @@ datos[which(datos$salario == min(datos$salario)),]
 Llevamos a cabo un análisis descriptivo multivariante con estas variables
 
 ```{r}
-ggplot(datos, aes(x = factor(fecha), y = pib, fill = pib > 0)) +
+ggplot(datos_prod, aes(x = factor(fecha), y = pib, fill = pib > 0)) +
   geom_col() +
   scale_fill_manual(values = c("firebrick", "seagreen"), guide = "none") +
   labs(
@@ -107,11 +125,11 @@ ggplot(datos, aes(x = factor(fecha), y = pib, fill = pib > 0)) +
 ```
 
 ```{r}
-ggplot(datos, aes(x = factor(fecha), y = prod, fill = prod > 0)) +
+ggplot(datos_prod, aes(x = factor(fecha), y = prod, fill = prod > 0)) +
   geom_col() +
   scale_fill_manual(values = c("firebrick", "seagreen"), guide = "none") +
   labs(
-    title = "Evolución Trimestral del Productividad (2008-2024)",
+    title = "Evolución Trimestral de la Productividad (2008-2024)",
     x = "Trimestre (AñoT)",
     y = "Tasa Variación Productividad (%)"
   ) +
@@ -121,13 +139,26 @@ ggplot(datos, aes(x = factor(fecha), y = prod, fill = prod > 0)) +
 
 
 ```{r}
-ggplot(datos, aes(x = factor(fecha), y = paro, fill = paro > 0)) +
+ggplot(datos_prod, aes(x = factor(fecha), y = paro, fill = paro > 0)) +
   geom_col() +
   scale_fill_manual(values = c("seagreen"), guide = "none") +
   labs(
     title = "Evolución Trimestral del Paro (2008-2024)",
     x = "Trimestre (AñoT)",
     y = "Tasa de Paro (%)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, size = 8))
+```
+
+```{r}
+ggplot(datos_ebe, aes(x = factor(fecha), y = ebe, fill = ebe > 0)) +
+  geom_col() +
+  scale_fill_manual(values = c("firebrick", "seagreen"), guide = "none") +
+  labs(
+    title = "Evolución Trimestral del EBE (2008-2024)",
+    x = "Trimestre (AñoT)",
+    y = "Tasa de EBE (%)"
   ) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, size = 8))
@@ -151,12 +182,17 @@ Salario medio:
 - Mínimo 2342  en 2008T1
 - Máximo 3146  en 2023T4
 
+EBE:
+- Mínimo -18.2925 en 2020T2
+- Máximo 15.6510 en 2020T3
+
 
 ## Correlaciones
 
+Para la base con productividad
 
 ```{r}
-mcor <- cor(datos[, -1])
+mcor <- cor(datos_prod[, -1])
 corrplot(mcor)
 ```
 
@@ -164,26 +200,39 @@ corrplot(mcor)
 corrplot(mcor,method = "number")
 ```
 
+Para la base con EBE
+
+```{r}
+mcor <- cor(datos_ebe[, -1])
+corrplot(mcor)
+```
+
+```{r}
+corrplot(mcor,method = "number")
+```
+
+
 # Evolución temporal
 
 Convertimos las columnas del dataframe en objetos ts
 
 ```{r}
-salario_ts <- ts(datos$salario, start = c(2008, 1), frequency = 4)
-pib_ts     <- ts(datos$pib,     start = c(2008, 1), frequency = 4)
-paro_ts    <- ts(datos$paro,    start = c(2008, 1), frequency = 4)
-prod_ts    <- ts(datos$prod,    start = c(2008, 1), frequency = 4)
+salario_ts <- ts(datos_prod$salario, start = c(2008, 1), frequency = 4)
+pib_ts     <- ts(datos_prod$pib,     start = c(2008, 1), frequency = 4)
+paro_ts    <- ts(datos_prod$paro,    start = c(2008, 1), frequency = 4)
+prod_ts    <- ts(datos_prod$prod,    start = c(2008, 1), frequency = 4)
+ebe_ts    <- ts(datos_ebe$ebe,    start = c(2008, 1), frequency = 4)
 ```
 
 ```{r}
-plot.ts(cbind(salario_ts, pib_ts, paro_ts, prod_ts), 
+plot.ts(cbind(salario_ts, pib_ts, paro_ts, prod_ts, ebe_ts), 
         main="Evolución de las variables del Mercado Laboral")
 ```
 
 Dispersión
 
 ```{r}
-ggplot(datos, aes(x=prod, y=salario)) + geom_point() + geom_smooth(method="lm") +
+ggplot(datos_prod, aes(x=prod, y=salario)) + geom_point() + geom_smooth(method="lm") +
   labs(title="Relación Salario vs Productividad")
 ```
 
@@ -195,11 +244,12 @@ plot(scale(salario_ts), type = "l", col = "blue", lwd = 2,
 lines(scale(pib_ts), col = "darkgreen", lwd = 2)
 lines(scale(paro_ts), col = "red", lwd = 2)
 lines(scale(prod_ts), col = "orange", lwd = 2)
+lines(scale(ebe_ts), col = "brown", lwd = 2)
 
 # Añadimos una leyenda para que se entienda el gráfico
 legend("topleft", 
-       legend = c("Salario", "PIB", "Paro", "Productividad"), 
-       col = c("blue", "darkgreen", "red", "orange"), 
+       legend = c("Salario", "PIB", "Paro", "Productividad", "EBE"), 
+       col = c("blue", "darkgreen", "red", "orange", "brown"), 
        lty = 1, lwd = 2, bty = "n", cex = 0.8)
 ```
 
