@@ -20,7 +20,7 @@ library(car)
 
 
 ```{r}
-datos <- read_csv("base.csv")
+datos <- read_csv("base_productividad.csv")
 ```
 
 # Test de estacionariedad (Test de Dicky-Fuller)
