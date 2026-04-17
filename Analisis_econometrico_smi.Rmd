@@ -1,0 +1,291 @@
+---
+title: "Pruebas estadísticas iniciales"
+output: html_document
+date: "2026-03-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Cargamos las librerías que vamos a utilizar
+
+```{r}
+library(urca)
+library(tseries)
+library(readr)
+library(lmtest)
+library(car)
+```
+
+
+```{r}
+datos <- read_csv("base_smi.csv")
+```
+
+# Test de estacionariedad (Test de Dicky-Fuller)
+
+Es necesario verificar previamente estacionariedad para evitar caer en regresiones espurias. Si las series son estacionarias, cualquier relación detectada es mucho más probable que sea real y no un accidente del paso del tiempo.
+
+## Variable salario
+
+A) Test ADF en niveles (Ho: Es No Estacionaria)
+
+```{r}
+ur_salario <- ur.df(datos$salario, type="trend", selectlags = "AIC", lags = 4)
+summary(ur_salario)
+```
+0.6978 > -3.45 (valor crítico a 5%) => No rechazas Ho => La serie es NO ESTACIONARIA
+
+B) Como no es estacionaria, probamos con la primera diferencia (repetimos el test pero ahora con la serie diferenciada):
+
+```{r}
+ur_diff_salario <- ur.df(diff(datos$salario), type="drift", selectlags = "AIC", lags = 4)
+summary(ur_diff_salario)
+```
+
+Ahora sí se verifica que es estacionaria (se compara con -2.89 pq ya no estamos con tendencia). Por tanto, la variable original es integrada de orden uno, es decir, I(1).
+
+
+## Variable pib
+
+A) Test ADF en niveles (Ho: Es No Estacionaria)
+
+```{r}
+ur_pib <- ur.df(datos$pib, type="trend", selectlags = "AIC", lags = 4)
+summary(ur_pib)
+```
+
+-3.1096 > -3.45 (valor crítico a 5%) => No rechazas Ho => La serie es NO ESTACIONARIA
+
+B) Como no es estacionaria, probamos con la primera diferencia (repetimos el test pero ahora con la serie diferenciada):
+
+```{r}
+ur_diff_pib <- ur.df(diff(datos$pib), type="drift", selectlags = "AIC", lags = 4)
+summary(ur_diff_pib)
+```
+
+Ahora sí se verifica que es estacionaria (se compara con -2.89 pq ya no estamos con tendencia). Por tanto, la variable original es integrada de orden uno, es decir, I(1).
+
+
+## Variable EBE
+
+A) Test ADF en niveles (Ho: Es No Estacionaria)
+
+```{r}
+ur_ebe <- ur.df(datos$ebe, type="trend", selectlags = "AIC", lags = 4)
+summary(ur_ebe)
+```
+
+
+-6.69 < -3.45 (valor crítico a 5%) => Rechazas Ho => La serie es ESTACIONARIA
+
+
+## Variable paro
+
+A) Test ADF en niveles (Ho: Es No Estacionaria)
+
+```{r}
+ur_paro <- ur.df(datos$paro, type="trend", selectlags = "AIC", lags = 4)
+summary(ur_paro)
+```
+
+
+-1.8532 > -3.45 (valor crítico a 5%) => No rechazas Ho => La serie es NO ESTACIONARIA
+
+B) Como no es estacionaria, probamos con la primera diferencia (repetimos el test pero ahora con la serie diferenciada):
+
+```{r}
+ur_diff_paro <- ur.df(diff(datos$paro), type="drift", selectlags = "AIC", lags = 4)
+summary(ur_diff_paro)
+```
+
+Ahora sí se verifica que es estacionaria (se compara con -2.89 pq ya no estamos con tendencia). Por tanto, la variable original es integrada de orden uno, es decir, I(1).
+
+## Variable SMI
+
+A) Test ADF en niveles (Ho: Es No Estacionaria)
+
+```{r}
+ur_smi <- ur.df(datos$smi, type="trend", selectlags = "AIC", lags = 4)
+summary(ur_smi)
+```
+
+
+-1.29 > -3.45 (valor crítico a 5%) => No rechazas Ho => La serie es NO ESTACIONARIA
+
+B) Como no es estacionaria, probamos con la primera diferencia (repetimos el test pero ahora con la serie diferenciada):
+
+```{r}
+ur_diff_smi <- ur.df(diff(datos$smi), type="drift", selectlags = "AIC", lags = 4)
+summary(ur_diff_smi)
+```
+
+-1.663 > -2.89 (valor crítico a 5%) => No rechazas Ho => La serie es NO ESTACIONARIA
+
+```{r}
+ur_diff2_smi <- ur.df(diff(diff(datos$smi)), type="drift", selectlags = "AIC", lags = 4)
+summary(ur_diff2_smi)
+```
+
+Ahora sí se verifica que es estacionaria (se compara con -2.89 pq ya no estamos con tendencia). Por tanto, la variable original es integrada de orden uno, es decir, I(1).
+
+
+
+# Test de cointegración de Engle-Granger
+
+H0: No estacionarios residuos => No cointegración
+
+Este test sirve para saber si existe una relación de equilibrio real a largo plazo o si la regresión es "espúrea" (falsa)
+
+```{r}
+modelo_lp <- lm(salario ~ ebe + paro + pib + smi, data = datos)
+summary(modelo_lp)
+```
+
+Extraemos los residuos (el error de equilibrio)
+
+```{r}
+residuos_lp <- residuals(modelo_lp)
+```
+
+Comprobamos si los residuos son estacionarios
+
+```{r}
+library(urca)
+# Test ADF sobre los residuos (sin constante ni tendencia, type="none")
+test_coint <- ur.df(residuos_lp, type = "none", selectlags = "BIC")
+summary(test_coint)
+```
+
+Como -2.1499 < -1.95, RECHAZAMOS la hipótesis nula de raíz unitaria en los residuos. Esto indica que los residuos son estacionarios, por lo que las variables están cointegradas.
+
+
+
+
+
+
+
+```{r}
+# Modelo en primeras diferencias (Punto 4.7 de tu guía)
+modelo_dif <- lm(diff(salario) ~ diff(pib) + diff(paro) + diff(ebe), data = datos)
+summary(modelo_dif)
+```
+
+Punto 5. "Endogeneidad": Las instrucciones sugieren que si la teoría lo justifica, usemos retardos como instrumentos. Es muy probable que el salario no reaccione al PIB de hoy, sino al de hace uno o dos trimestres.
+
+# Modelo con retardos
+
+```{r}
+# 1. Convertimos a objeto de serie temporal para usar lags fácilmente
+pib_ts <- ts(datos$pib, frequency = 4)
+salario_ts <- ts(datos$salario, frequency = 4)
+paro_ts <- ts(datos$paro, frequency = 4)
+ebe_ts <- ts(datos$ebe, frequency = 4)
+
+# 2. Creamos las diferencias y los retardos (Lag -1 es un retraso de un periodo)
+d_salario <- diff(salario_ts)
+d_pib_lag1 <- stats::lag(diff(pib_ts), -1)
+d_paro_lag1 <- stats::lag(diff(paro_ts), -1)
+d_ebe_lag1 <- stats::lag(diff(ebe_ts), -1)
+
+# 3. Sincronizamos las series para que tengan la misma longitud
+datos_reg <- ts.intersect(d_salario, d_pib_lag1, d_paro_lag1, d_ebe_lag1)
+
+# 4. Nuevo modelo con efecto retardado
+modelo_retardado <- lm(d_salario ~ d_pib_lag1 + d_paro_lag1 + d_ebe_lag1, data = datos_reg)
+summary(modelo_retardado)
+```
+
+```{r}
+library(lmtest)
+dwtest(modelo_retardado)
+```
+
+Sí hay autocorrelación (negativa)
+
+# Regresión con corrección de autocorrelación
+
+```{r}
+library(nlme)
+
+# Estimación por MCG (Mínimos Cuadrados Generalizados) con proceso AR(1)
+# Esto es exactamente lo que pide el punto 4.7 de tu guía.
+modelo_mcg <- gls(d_salario ~ d_pib_lag1 + d_paro_lag1 + d_ebe_lag1, 
+                  data = as.data.frame(datos_reg),
+                  correlation = corAR1(form = ~ 1), # Especificamos el AR(1)
+                  method = "ML")
+
+summary(modelo_mcg)
+```
+
+# Al aplicar Mínimos Cuadrados Generalizados (MCG), hemos corregido la estructura del error y ahora aparecen variables estadísticamente significativas --> MAL
+
+# Test de causalidad de Granger
+
+H0: Los valores pasados de X no ayudan a predecir el valor de Y
+
+¿Los beneficios causan realmente al salario?
+
+```{r}
+library(lmtest)
+grangertest(d_salario ~ d_ebe_lag1, order = 1, data = datos_reg)
+```
+
+Los beneficios no ayudan a predecir el salario mejor de lo que lo hace el propio pasado del salario por sí solo.
+
+
+# Pruebas de diagnóstico (modelo final) ??
+
+Normalidad de residuos
+
+# Shapiro o Kolmogorov?
+
+```{r}
+# Extraemos los residuos ponderados (los "limpios")
+res_finales <- residuals(modelo_mcg, type = "normalized")
+
+# Test de Shapiro con los residuos correctos
+shapiro.test(res_finales)
+```
+
+```{r}
+# Gráfico de Probabilidad Normal
+qqnorm(residuals(modelo_mcg))
+qqline(residuals(modelo_mcg), col = "red")
+```
+
+```{r}
+# Gráfico con residuos estandarizados (es más preciso para diagnóstico)
+residuos_std <- residuals(modelo_mcg, type = "normalized")
+qqnorm(residuos_std, main = "Q-Q Plot de Residuos Normalizados")
+qqline(residuos_std, col = "red", lwd = 2)
+```
+
+
+Homocedasticidad (Breusch-Pagan)
+
+```{r}
+# 1. Extraemos los residuos limpios de autocorrelacion y heterocedasticidad
+residuos_p <- residuals(modelo_mcg, type = "normalized")
+
+# 2. Creamos un modelo lineal "ficticio" usando esos residuos como Y
+# Esto le permite a bptest saber qué variables explicativas usar
+modelo_para_test <- lm(residuos_p ~ d_pib_lag1 + d_paro_lag1 + d_prod_lag1, data = as.data.frame(datos_reg))
+
+# 3. Aplicamos el test directamente sobre ese modelo
+library(lmtest)
+bptest(modelo_para_test)
+```
+
+Multicolinealidad (VIF)
+
+```{r}
+vif(modelo_mcg)
+```
+
+
+
+
+
+

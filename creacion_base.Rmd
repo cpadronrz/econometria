@@ -16,6 +16,7 @@ library(pxR)
 library(tidyverse)
 library(stringr)
 library(dplyr)
+library(readxl)
 ```
 
 Cargamos la base de datos que vamos a utilizar
@@ -213,6 +214,32 @@ ebe_limpio <- ebe |>
 range(paro_limpio$ANO)
 ```
 
+Datos de SMI
+
+```{r}
+smi<-read_excel("smi trimestral.xlsx")
+names(smi)
+```
+
+
+```{r}
+smi_limpio <- smi |>
+  mutate(across(where(is.character), stringr::str_trim)) |>
+  mutate(
+    ANO = as.numeric(substr(Periodo, 1, 4)),
+    TRIM = as.numeric(substr(Periodo, 6, 7)),
+    tiempo = ANO + TRIM * 0.25 - 0.25)|>
+
+  arrange(ANO) |>
+  select(Periodo, ANO, tiempo, valor_smi = SMI)
+
+```
+
+
+```{r}
+range(smi_limpio$ANO)
+```
+
 
 Unimos los data frame
 
@@ -243,7 +270,26 @@ df_final_ebe <- pib_limpio |>
     salario = salario_eur
   )
 
+df_final_smi <- pib_limpio |>
+  inner_join(ebe_limpio, by = "tiempo") |>
+  inner_join(paro_limpio, by = "tiempo") |>
+  inner_join(salarios_limpio, by = "tiempo") |>
+  inner_join(smi_limpio, by = "tiempo") |>
+  select(
+    fecha = Periodo.x, 
+    tiempo, 
+    pib = pib_value, 
+    ebe = ebe_valor, 
+    paro = tasa_paro,
+    salario = salario_eur,
+    smi = valor_smi
+  )
+
 ```
+
+
+
+
 
 Comprobamos
 
@@ -263,10 +309,19 @@ head(df_final_ebe)
 tail(df_final_ebe)
 ```
 
+```{r}
+head(df_final_smi)
+```
+
+```{r}
+tail(df_final_smi)
+```
+
 
 ```{r}
 write.csv(df_final_productividad, "base_productividad.csv", row.names = FALSE)
 write.csv(df_final_ebe, "base_ebe.csv", row.names = FALSE)
+write.csv(df_final_smi, "base_smi.csv", row.names = FALSE)
 ```
 
 
