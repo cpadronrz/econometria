@@ -137,6 +137,13 @@ modelo_dif <- lm(diff(salario) ~ diff(pib) + diff(paro) + diff(ebe), data = dato
 summary(modelo_dif)
 ```
 
+```{r}
+modelo_dif2 <- lm(diff(salario) ~ diff(pib) + ebe[-1] + diff(paro), data = datos)
+
+summary(modelo_dif2)
+```
+
+
 Punto 5. "Endogeneidad": Las instrucciones sugieren que si la teoría lo justifica, usemos retardos como instrumentos. Es muy probable que el salario no reaccione al PIB de hoy, sino al de hace uno o dos trimestres.
 
 # Modelo con retardos

@@ -175,26 +175,6 @@ names(ebe)
 
 
 ```{r}
-paro_limpio <- paro |>
-  mutate(across(where(is.character), stringr::str_trim)) |>
-  
-  filter(str_detect(Comunidades.y.Ciudades.Autónomas, "Total Nacional")) |> 
-  filter(Sexo == "Ambos sexos") |>
-  filter(Edad == "Total") |>
-
-  mutate(ANO = as.numeric(substr(Periodo, 1, 4)),
-         TRIM = as.numeric(substr(Periodo, 6, 7)),
-         tiempo = ANO + TRIM * 0.25 - 0.25) |>
-  
-  filter(ANO >= 2008 & ANO <= 2023) |>
-
-  arrange(tiempo) |>
-  select(Periodo, ANO, TRIM, tiempo, tasa_paro = value)
-
-```
-
-
-```{r}
 ebe_limpio <- ebe |>
   mutate(across(where(is.character), stringr::str_trim)) |>
   filter(Agregados.macroeconómicos == "Excedente de explotación bruto y Renta mixta bruta") |> 
@@ -208,10 +188,28 @@ ebe_limpio <- ebe |>
   select(Periodo, ANO, TRIM, tiempo, ebe_valor = value)
 ```
 
+```{r}
+range(ebe_limpio$ANO)
+```
 
+Datos Impuestos menos subvenciones sobre la producción y las importaciones
 
 ```{r}
-range(paro_limpio$ANO)
+imp_limpio <- ebe |>
+  mutate(across(where(is.character), stringr::str_trim)) |>
+  filter(Agregados.macroeconómicos == "Impuestos menos subvenciones sobre la producción y las importaciones") |> 
+  filter(Tipo.de.dato == "Datos ajustados de estacionalidad y calendario") |>
+  filter(Niveles.y.tasas == "Variación trimestral") |>
+  mutate(ANO = as.numeric(substr(Periodo, 1, 4)),
+         TRIM = as.numeric(substr(Periodo, 6, 7)),
+         tiempo = ANO + TRIM * 0.25 - 0.25) |>
+  filter(ANO >= 2008 & ANO <= 2023) |>
+  arrange(tiempo) |>
+  select(Periodo, ANO, TRIM, tiempo, impuestos_sub = value)
+```
+
+```{r}
+range(imp_limpio$ANO)
 ```
 
 Datos de SMI
@@ -285,10 +283,24 @@ df_final_smi <- pib_limpio |>
     smi = valor_smi
   )
 
+df_final_imp <- pib_limpio |>
+  inner_join(ebe_limpio, by = "tiempo") |>
+  inner_join(paro_limpio, by = "tiempo") |>
+  inner_join(salarios_limpio, by = "tiempo") |>
+  inner_join(smi_limpio, by = "tiempo") |>
+  inner_join(imp_limpio, by = "tiempo") |>
+  select(
+    fecha = Periodo.x, 
+    tiempo, 
+    pib = pib_value, 
+    ebe = ebe_valor, 
+    paro = tasa_paro,
+    salario = salario_eur,
+    smi = valor_smi,
+    impuestos_sub = impuestos_sub
+  )
+
 ```
-
-
-
 
 
 Comprobamos
@@ -317,11 +329,20 @@ head(df_final_smi)
 tail(df_final_smi)
 ```
 
+```{r}
+head(df_final_imp)
+```
+
+```{r}
+tail(df_final_imp)
+```
+
 
 ```{r}
 write.csv(df_final_productividad, "base_productividad.csv", row.names = FALSE)
 write.csv(df_final_ebe, "base_ebe.csv", row.names = FALSE)
 write.csv(df_final_smi, "base_smi.csv", row.names = FALSE)
+write.csv(df_final_imp, "base_imp.csv", row.names = FALSE)
 ```
 
 

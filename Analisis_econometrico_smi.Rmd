@@ -121,7 +121,7 @@ ur_diff_smi <- ur.df(diff(datos$smi), type="drift", selectlags = "AIC", lags = 4
 summary(ur_diff_smi)
 ```
 
--1.663 > -2.89 (valor crítico a 5%) => No rechazas Ho => La serie es NO ESTACIONARIA
+-2.663 > -2.89 (valor crítico a 5%) => No rechazas Ho => La serie es NO ESTACIONARIA
 
 ```{r}
 ur_diff2_smi <- ur.df(diff(diff(datos$smi)), type="drift", selectlags = "AIC", lags = 4)

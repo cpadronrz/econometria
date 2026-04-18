@@ -20,7 +20,7 @@ library(car)
 
 
 ```{r}
-datos <- read_csv("base_productividad.csv")
+datos <- read_csv("base_imp.csv")
 ```
 
 # Test de estacionariedad (Test de Dicky-Fuller)
@@ -68,17 +68,17 @@ summary(ur_diff_pib)
 Ahora sí se verifica que es estacionaria (se compara con -2.89 pq ya no estamos con tendencia). Por tanto, la variable original es integrada de orden uno, es decir, I(1).
 
 
-## Variable productividad
+## Variable EBE
 
 A) Test ADF en niveles (Ho: Es No Estacionaria)
 
 ```{r}
-ur_prod <- ur.df(datos$prod, type="trend", selectlags = "AIC", lags = 4)
-summary(ur_prod)
+ur_ebe <- ur.df(datos$ebe, type="trend", selectlags = "AIC", lags = 4)
+summary(ur_ebe)
 ```
 
 
--3.9037 < -3.45 (valor crítico a 5%) => Rechazas Ho => La serie es ESTACIONARIA
+-6.69 < -3.45 (valor crítico a 5%) => Rechazas Ho => La serie es ESTACIONARIA
 
 
 ## Variable paro
@@ -102,6 +102,55 @@ summary(ur_diff_paro)
 
 Ahora sí se verifica que es estacionaria (se compara con -2.89 pq ya no estamos con tendencia). Por tanto, la variable original es integrada de orden uno, es decir, I(1).
 
+## Variable SMI
+
+A) Test ADF en niveles (Ho: Es No Estacionaria)
+
+```{r}
+ur_smi <- ur.df(datos$smi, type="trend", selectlags = "AIC", lags = 4)
+summary(ur_smi)
+```
+
+-1.29 > -3.45 (valor crítico a 5%) => No rechazas Ho => La serie es NO ESTACIONARIA
+
+B) Como no es estacionaria, probamos con la primera diferencia (repetimos el test pero ahora con la serie diferenciada):
+
+```{r}
+ur_diff_smi <- ur.df(diff(datos$smi), type="drift", selectlags = "AIC", lags = 4)
+summary(ur_diff_smi)
+```
+
+-2.663 > -2.89 (valor crítico a 5%) => No rechazas Ho => La serie es NO ESTACIONARIA
+
+```{r}
+ur_diff2_smi <- ur.df(diff(diff(datos$smi)), type="drift", selectlags = "AIC", lags = 4)
+summary(ur_diff2_smi)
+```
+
+
+Ahora sí se verifica que es estacionaria (se compara con -2.89 pq ya no estamos con tendencia). Por tanto, la variable original es integrada de orden uno, es decir, I(1).
+
+## Variable impuestos y subvenciones
+
+A) Test ADF en niveles (Ho: Es No Estacionaria)
+
+```{r}
+ur_imp <- ur.df(datos$impuestos_sub, type="trend", selectlags = "AIC", lags = 4)
+summary(ur_imp)
+```
+
+
+-7.1117 < -3.45 (valor crítico a 5%) => Rechazas Ho => La serie es ESTACIONARIA
+
+# Modelo
+
+```{r}
+modelo_dif <- lm(diff(salario)[-1] ~ diff(pib)[-1] + ebe[-1][-1] + diff(paro)[-1] + diff(diff(smi)) + impuestos_sub[-2], data = datos)
+
+summary(modelo_dif)
+```
+
+
 
 # Test de cointegración de Engle-Granger
 
@@ -110,7 +159,7 @@ H0: No estacionarios residuos => No cointegración
 Este test sirve para saber si existe una relación de equilibrio real a largo plazo o si la regresión es "espúrea" (falsa)
 
 ```{r}
-modelo_lp <- lm(salario ~ prod + paro + pib, data = datos)
+modelo_lp <- lm(salario ~ ebe + paro + pib + impuestos_sub + smi, data = datos)
 summary(modelo_lp)
 ```
 
@@ -129,20 +178,13 @@ test_coint <- ur.df(residuos_lp, type = "none", selectlags = "BIC")
 summary(test_coint)
 ```
 
-Como -1.6525 > -1.95, NO RECHAZAMOS la hipótesis nula de raíz unitaria en los residuos. Esto indica que los residuos NO son estacionarios, por lo que las variables NO están cointegradas.
+Como -2.7789 > -1.95, NO RECHAZAMOS la hipótesis nula de raíz unitaria en los residuos. Esto indica que los residuos NO son estacionarios, por lo que las variables NO están cointegradas.
 
 ```{r}
 # Modelo en primeras diferencias (Punto 4.7 de tu guía)
-modelo_dif <- lm(diff(salario) ~ diff(pib) + diff(paro) + diff(prod), data = datos)
+modelo_dif <- lm(diff(salario) ~ diff(pib) + diff(paro) + diff(ebe), data = datos)
 summary(modelo_dif)
 ```
-
-```{r}
-modelo_dif <- lm(diff(salario) ~ diff(pib) + diff(paro) + prod[-1], data = datos)
-
-summary(modelo_dif)
-```
-
 
 Punto 5. "Endogeneidad": Las instrucciones sugieren que si la teoría lo justifica, usemos retardos como instrumentos. Es muy probable que el salario no reaccione al PIB de hoy, sino al de hace uno o dos trimestres.
 
@@ -153,19 +195,19 @@ Punto 5. "Endogeneidad": Las instrucciones sugieren que si la teoría lo justifi
 pib_ts <- ts(datos$pib, frequency = 4)
 salario_ts <- ts(datos$salario, frequency = 4)
 paro_ts <- ts(datos$paro, frequency = 4)
-prod_ts <- ts(datos$prod, frequency = 4)
+ebe_ts <- ts(datos$ebe, frequency = 4)
 
 # 2. Creamos las diferencias y los retardos (Lag -1 es un retraso de un periodo)
 d_salario <- diff(salario_ts)
 d_pib_lag1 <- stats::lag(diff(pib_ts), -1)
 d_paro_lag1 <- stats::lag(diff(paro_ts), -1)
-d_prod_lag1 <- stats::lag(diff(prod_ts), -1)
+d_ebe_lag1 <- stats::lag(diff(ebe_ts), -1)
 
 # 3. Sincronizamos las series para que tengan la misma longitud
-datos_reg <- ts.intersect(d_salario, d_pib_lag1, d_paro_lag1, d_prod_lag1)
+datos_reg <- ts.intersect(d_salario, d_pib_lag1, d_paro_lag1, d_ebe_lag1)
 
 # 4. Nuevo modelo con efecto retardado
-modelo_retardado <- lm(d_salario ~ d_pib_lag1 + d_paro_lag1 + d_prod_lag1, data = datos_reg)
+modelo_retardado <- lm(d_salario ~ d_pib_lag1 + d_paro_lag1 + d_ebe_lag1, data = datos_reg)
 summary(modelo_retardado)
 ```
 
@@ -183,7 +225,7 @@ library(nlme)
 
 # Estimación por MCG (Mínimos Cuadrados Generalizados) con proceso AR(1)
 # Esto es exactamente lo que pide el punto 4.7 de tu guía.
-modelo_mcg <- gls(d_salario ~ d_pib_lag1 + d_paro_lag1 + d_prod_lag1, 
+modelo_mcg <- gls(d_salario ~ d_pib_lag1 + d_paro_lag1 + d_ebe_lag1, 
                   data = as.data.frame(datos_reg),
                   correlation = corAR1(form = ~ 1), # Especificamos el AR(1)
                   method = "ML")
@@ -191,20 +233,20 @@ modelo_mcg <- gls(d_salario ~ d_pib_lag1 + d_paro_lag1 + d_prod_lag1,
 summary(modelo_mcg)
 ```
 
-Al aplicar Mínimos Cuadrados Generalizados (MCG), hemos corregido la estructura del error y ahora aparecen variables estadísticamente significativas
+# Al aplicar Mínimos Cuadrados Generalizados (MCG), hemos corregido la estructura del error y ahora aparecen variables estadísticamente significativas --> MAL
 
 # Test de causalidad de Granger
 
 H0: Los valores pasados de X no ayudan a predecir el valor de Y
 
-¿La productividad causa realmente al salario?
+¿Los beneficios causan realmente al salario?
 
 ```{r}
 library(lmtest)
-grangertest(d_salario ~ d_prod_lag1, order = 1, data = datos_reg)
+grangertest(d_salario ~ d_ebe_lag1, order = 1, data = datos_reg)
 ```
 
-La productividad no ayuda a predecir el salario mejor de lo que lo hace el propio pasado del salario por sí solo.
+Los beneficios no ayudan a predecir el salario mejor de lo que lo hace el propio pasado del salario por sí solo.
 
 
 # Pruebas de diagnóstico (modelo final) ??
