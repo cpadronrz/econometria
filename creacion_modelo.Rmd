@@ -20,7 +20,110 @@ library(car)
 
 
 ```{r}
-datos <- read_csv("base_smi.csv")
+datos <- read_csv("base_completa.csv")
+```
+
+```{r}
+modelo <- lm(log(salario)[-1] ~ pib[-1] + paro[-1] + diff(smi), data = datos)
+
+summary(modelo)
+```
+
+Dado que diff(smi) no es significativo, probamos a incluír smi, pues ampliando el nivel de significación a 0.1, es del mismo orden de integración que las otras.
+
+```{r}
+modelo2 <- lm(log(salario) ~ pib + paro + smi, data = datos)
+
+summary(modelo2)
+```
+
+# Test de Johansen
+
+H0: Hay cointegración entre las variables (existe una relación de equilibrio a largo plazo)
+
+```{r}
+salario_ts <- ts(datos$salario, start = c(2008, 1), frequency = 4)
+pib_ts     <- ts(datos$pib,     start = c(2008, 1), frequency = 4)
+paro_ts    <- ts(datos$paro,    start = c(2008, 1), frequency = 4)
+smi_ts     <- ts(datos$smi, start = c(2008, 1), frequency = 4)
+series     <- ts.union(salario_ts, pib_ts, paro_ts, smi_ts)
+```
+
+```{r}
+coint.test1 <- ca.jo(series,
+                     ecdet = "trend",
+                     type="trace",
+                     K=2,
+                     spec="longrun"
+)
+summary(coint.test1) # Check the cointegration rank here
+
+coint.test1@cval
+coint.test1@teststat
+```
+
+Tienes exactamente una (1) relación de cointegración (donde el estadístico deja de ser mayor al valor crítico).
+
+
+```{r}
+series     <- ts.union(log(salario_ts), pib_ts, paro_ts, smi_ts)
+```
+
+
+```{r}
+coint.test2 <- ca.jo(series,
+                     ecdet = "trend",
+                     type="trace",
+                     K=2,
+                     spec="longrun"
+)
+summary(coint.test2) # Check the cointegration rank here
+
+coint.test2@cval
+coint.test2@teststat
+```
+
+Tienes exactamente una (1) relación de cointegración (donde el estadístico deja de ser mayor al valor crítico). Por tanto, aceptamos H0. El modelo de log(salario), smi, paro y pib tienen relación a largo plazo.
+
+# Estudio a corto plazo
+
+```{r}
+modelo3 <- lm(diff(log(salario)) ~ diff(pib) + diff(paro) + diff(smi), data = datos)
+
+summary(modelo3)
+```
+
+```{r}
+modelo4 <- lm(diff(log(salario)) ~ diff(pib) + diff(paro), data = datos)
+
+summary(modelo4)
+```
+
+```{r}
+modelo5 <- lm(diff(log(salario)) ~ diff(pib) + diff(smi), data = datos)
+summary(modelo5)
+```
+
+```{r}
+modelo6 <- lm(diff(log(salario)) ~ diff(paro) + diff(smi), data = datos)
+summary(modelo6)
+```
+
+```{r}
+modelo7 <- lm(diff(log(salario)) ~ diff(pib) + diff(paro) + diff(smi) -1, data = datos)
+
+summary(modelo7)
+```
+
+```{r}
+modelo8 <- lm(diff(log(salario)) ~ diff(pib) + diff(paro) -1, data = datos)
+
+summary(modelo8)
+```
+
+```{r}
+modelo9 <- lm(diff(log(salario)) ~ diff(pib) + diff(smi) -1, data = datos)
+summary(modelo9)
 ```
 
 
