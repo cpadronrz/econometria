@@ -300,6 +300,25 @@ df_final_imp <- pib_limpio |>
     impuestos_sub = impuestos_sub
   )
 
+df <- pib_limpio |>
+  inner_join(prod_filtrado, by = "tiempo") |>
+  inner_join(paro_limpio, by = "tiempo") |>
+  inner_join(salarios_limpio, by = "tiempo") |>
+  inner_join(ebe_limpio, by = "tiempo") |>
+  inner_join(smi_limpio, by = "tiempo") |>
+  inner_join(imp_limpio, by = "tiempo") |>
+  select(
+    fecha = Periodo.x, 
+    tiempo, 
+    pib = pib_value, 
+    prod = value, 
+    paro = tasa_paro,
+    salario = salario_eur,
+    ebe = ebe_valor,
+    smi = valor_smi,
+    impuestos_sub = impuestos_sub
+  )
+
 ```
 
 
@@ -343,6 +362,7 @@ write.csv(df_final_productividad, "base_productividad.csv", row.names = FALSE)
 write.csv(df_final_ebe, "base_ebe.csv", row.names = FALSE)
 write.csv(df_final_smi, "base_smi.csv", row.names = FALSE)
 write.csv(df_final_imp, "base_imp.csv", row.names = FALSE)
+write.csv(df, "base_completa.csv", row.names = FALSE)
 ```
 
 

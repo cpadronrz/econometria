@@ -128,7 +128,7 @@ ur_diff2_smi <- ur.df(diff(diff(datos$smi)), type="drift", selectlags = "AIC", l
 summary(ur_diff2_smi)
 ```
 
-Ahora sí se verifica que es estacionaria (se compara con -2.89 pq ya no estamos con tendencia). Por tanto, la variable original es integrada de orden uno, es decir, I(1).
+Ahora sí se verifica que es estacionaria (se compara con -2.89 pq ya no estamos con tendencia). Por tanto, la variable original es integrada de orden uno, es decir, I(2).
 
 
 

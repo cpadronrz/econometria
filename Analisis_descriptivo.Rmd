@@ -20,7 +20,10 @@ library(readr)
 ```{r}
 datos_prod <- read_csv("base_productividad.csv")
 datos_ebe <- read_csv("base_ebe.csv")
+datos_imp <- read_csv("base_imp.csv")
 ```
+
+No comprobamos base_smi porque esas variables se incluyen en base_imp
 
 ```{r}
 str(datos_prod)
@@ -29,6 +32,11 @@ str(datos_prod)
 ```{r}
 str(datos_ebe)
 ```
+
+```{r}
+str(datos_imp)
+```
+
 
 
 ```{r}
@@ -40,6 +48,11 @@ summary(datos_ebe)
 ```
 
 ```{r}
+summary(datos_imp)
+```
+
+
+```{r}
 dim(datos_prod)
 ```
 
@@ -47,7 +60,9 @@ dim(datos_prod)
 dim(datos_ebe)
 ```
 
-Tenemos 6 variables y 64 observaciones en ambas bases
+```{r}
+dim(datos_imp)
+```
 
 ```{r}
 which(is.na(datos_prod))
@@ -59,13 +74,21 @@ No hay valores missing
 which(is.na(datos_ebe))
 ```
 
+No hay valores missing
+
+```{r}
+which(is.na(datos_imp))
+```
+
+En ninguno de los casos tenemos valores missing, por lo que no es necesario realizar ningún tratamiento de este tipo.
+
 # Estadísticos descriptivos
 
 Realizamos el Análisis Estadístico Descriptivo Univariante
 
 ## Variable dependiente: salario
 
-Analizamos el salario
+Analizamos el salario (es el mismo en todas las bases que vamos a utilizar)
 
 ```{r}
 summary(datos_prod$salario)
@@ -164,6 +187,32 @@ ggplot(datos_ebe, aes(x = factor(fecha), y = ebe, fill = ebe > 0)) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, size = 8))
 ```
 
+```{r}
+ggplot(datos_imp, aes(x = factor(fecha), y = smi, fill = smi > 0)) +
+  geom_col() +
+  scale_fill_manual(values = c("seagreen"), guide = "none") +
+  labs(
+    title = "Evolución Trimestral del SMI (2008-2024)",
+    x = "Trimestre (AñoT)",
+    y = "Valor SMI (€)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, size = 8))
+```
+
+```{r}
+ggplot(datos_imp, aes(x = factor(fecha), y = impuestos_sub, fill = impuestos_sub > 0)) +
+  geom_col() +
+  scale_fill_manual(values = c("firebrick", "seagreen"), guide = "none") +
+  labs(
+    title = "Evolución Trimestral del Impuestos y Subvenciones (2008-2024)",
+    x = "Trimestre (AñoT)",
+    y = "Tasa de Impuestos y subvenciones (%)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, size = 8))
+```
+
 Variable temporal: desde 2008T1 a 2023T4
 
 Tasa variación trimestral del PIB: 
@@ -211,6 +260,16 @@ corrplot(mcor)
 corrplot(mcor,method = "number")
 ```
 
+Para la base con smi e impuestos y subvenciones
+
+```{r}
+mcor <- cor(datos_imp[, -1])
+corrplot(mcor)
+```
+
+```{r}
+corrplot(mcor,method = "number")
+```
 
 # Evolución temporal
 
@@ -222,10 +281,12 @@ pib_ts     <- ts(datos_prod$pib,     start = c(2008, 1), frequency = 4)
 paro_ts    <- ts(datos_prod$paro,    start = c(2008, 1), frequency = 4)
 prod_ts    <- ts(datos_prod$prod,    start = c(2008, 1), frequency = 4)
 ebe_ts    <- ts(datos_ebe$ebe,    start = c(2008, 1), frequency = 4)
+smi_ts <- ts(datos_imp$smi, start = c(2008, 1), frequency = 4)
+imp_sub_ts <- ts(datos_imp$impuestos_sub, start = c(2008, 1), frequency = 4)
 ```
 
 ```{r}
-plot.ts(cbind(salario_ts, pib_ts, paro_ts, prod_ts, ebe_ts), 
+plot.ts(cbind(salario_ts, pib_ts, paro_ts, prod_ts, ebe_ts, smi_ts, imp_sub_ts), 
         main="Evolución de las variables del Mercado Laboral")
 ```
 
@@ -238,18 +299,20 @@ ggplot(datos_prod, aes(x=prod, y=salario)) + geom_point() + geom_smooth(method="
 
 ```{r}
 # Estandarizamos para comparar movimientos relativos
-plot(scale(salario_ts), type = "l", col = "blue", lwd = 2, 
+plot(scale(salario_ts), type = "l", col = "blue", lwd = 2, ylim = c(-5, 5),
      main = "Comparativa de Ciclos Económicos (Series Estandarizadas)",
      ylab = "Desviaciones típicas", xlab = "Año")
 lines(scale(pib_ts), col = "darkgreen", lwd = 2)
 lines(scale(paro_ts), col = "red", lwd = 2)
 lines(scale(prod_ts), col = "orange", lwd = 2)
 lines(scale(ebe_ts), col = "brown", lwd = 2)
+lines(scale(smi_ts), col = "pink", lwd = 2)
+lines(scale(imp_sub_ts), col = "black", lwd = 2)
 
 # Añadimos una leyenda para que se entienda el gráfico
 legend("topleft", 
-       legend = c("Salario", "PIB", "Paro", "Productividad", "EBE"), 
-       col = c("blue", "darkgreen", "red", "orange", "brown"), 
+       legend = c("Salario", "PIB", "Paro", "Productividad", "EBE", "SMI", "Impuestos y Subvenciones"),
+       col = c("blue", "darkgreen", "red", "orange", "brown", "pink", "black"), 
        lty = 1, lwd = 2, bty = "n", cex = 0.8)
 ```
 

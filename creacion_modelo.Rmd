@@ -1,0 +1,28 @@
+---
+title: "Creacion modelo"
+output: html_document
+date: "2026-04-25"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Cargamos las librerías que vamos a utilizar
+
+```{r}
+library(urca)
+library(tseries)
+library(readr)
+library(lmtest)
+library(car)
+```
+
+
+```{r}
+datos <- read_csv("base_smi.csv")
+```
+
+
+
+
