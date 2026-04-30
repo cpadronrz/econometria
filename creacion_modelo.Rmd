@@ -62,7 +62,7 @@ coint.test1@cval
 coint.test1@teststat
 ```
 
-Tienes exactamente una (1) relación de cointegración (donde el estadístico deja de ser mayor al valor crítico).
+Tenemos exactamente una (1) relación de cointegración (donde el estadístico deja de ser mayor al valor crítico).
 
 
 ```{r}
@@ -83,7 +83,32 @@ coint.test2@cval
 coint.test2@teststat
 ```
 
-Tienes exactamente una (1) relación de cointegración (donde el estadístico deja de ser mayor al valor crítico). Por tanto, aceptamos H0. El modelo de log(salario), smi, paro y pib tienen relación a largo plazo.
+Tenemos exactamente una (1) relación de cointegración (donde el estadístico deja de ser mayor al valor crítico). Por tanto, aceptamos H0. El modelo de log(salario), smi, paro y pib tienen relación a largo plazo.
+
+## Normalidad
+
+```{r}
+jarque.bera.test(residuals(modelo2))
+```
+
+Los residuos del modelo de largo plazo siguen una distribución normal. Esto valida que las estimaciones de los coeficientes del PIB, Paro y SMI son fiables y que las pruebas de significación $t$ no están sesgadas.
+
+## Homocedasticidad
+
+```{r}
+bptest(modelo2)
+```
+
+Existe homocedasticidad. La varianza de los errores es constante a lo largo de toda la serie de tiempo, lo que significa que el modelo predice con la misma precisión en periodos de bonanza que en periodos de crisis.
+
+
+## Autocorrelación
+
+```{r}
+dwtest(modelo2)
+```
+
+
 
 # Estudio a corto plazo
 
@@ -125,6 +150,91 @@ summary(modelo8)
 modelo9 <- lm(diff(log(salario)) ~ diff(pib) + diff(smi) -1, data = datos)
 summary(modelo9)
 ```
+
+## Con arima
+
+```{r}
+# 1. Calculamos los residuos del modelo de largo plazo (modelo2 de tu doc)
+# Nota: Usamos log(salario) como indicaste en tu prueba de cointegración
+residuos_lp <- residuals(modelo2)
+
+# 2. Creamos la variable de corrección de errores (rezagada)
+mec <- residuos_lp[-length(residuos_lp)]
+```
+
+```{r}
+library(forecast)
+
+# Preparamos las diferencias (corto plazo) alineadas con el MEC
+d_log_salario <- diff(log(salario_ts))
+d_pib  <- diff(pib_ts)
+d_paro <- diff(paro_ts)
+d_smi  <- diff(smi_ts)
+
+# Combinamos las variables exógenas (incluyendo el MEC)
+# Usamos las variables que mejor funcionaron en tus pruebas (pib, paro, smi)
+xreg_cp <- cbind(d_pib, d_paro, d_smi, mec)
+
+
+```
+
+## Sin regresores externos
+
+```{r}
+
+modelo_arima <- auto.arima(d_log_salario)
+
+summary(modelo_arima)
+```
+
+## Normalidad de los residuos
+
+```{r}
+library(tseries)
+jarque.bera.test(residuals(modelo_arima_ajustado))
+```
+
+## Homocedasticidad de los residuos
+
+```{r}
+library(FinTS)
+ArchTest(residuals(modelo_arima_ajustado))
+```
+
+
+## Con regresores externos
+
+```{r}
+# Ajustamos el modelo ARIMA con regresores externos
+modelo_arima_ajustado <- auto.arima(d_log_salario, xreg = xreg_cp)
+
+summary(modelo_arima_ajustado)
+```
+
+
+```{r}
+# Mira si los residuos son ruido blanco (p-value > 0.05 es lo ideal)
+Box.test(residuals(modelo_arima_ajustado), type = "Ljung-Box")
+```
+
+## Normalidad de los residuos
+
+```{r}
+jarque.bera.test(residuals(modelo_arima_ajustado))
+```
+
+Rechazamos normalidad. En series de salarios, esto es muy común debido a "outliers" (datos atípicos) causados por cambios legislativos bruscos o crisis. Aunque estadísticamente no sea "perfecto", el modelo sigue siendo válido para predecir porque el test de autocorrelación (Ljung-Box) sale bien.
+
+## Homocedasticidad de los residuos
+
+```{r}
+library(FinTS)
+ArchTest(residuals(modelo_arima_ajustado))
+```
+
+El modelo arima es estable en varianza
+
+
 
 
 
