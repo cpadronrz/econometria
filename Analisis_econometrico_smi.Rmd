@@ -271,7 +271,7 @@ residuos_p <- residuals(modelo_mcg, type = "normalized")
 
 # 2. Creamos un modelo lineal "ficticio" usando esos residuos como Y
 # Esto le permite a bptest saber qué variables explicativas usar
-modelo_para_test <- lm(residuos_p ~ d_pib_lag1 + d_paro_lag1 + d_prod_lag1, data = as.data.frame(datos_reg))
+modelo_para_test <- lm(residuos_p ~ d_pib_lag1 + d_paro_lag1 + d_ebe_lag1, data = as.data.frame(datos_reg))
 
 # 3. Aplicamos el test directamente sobre ese modelo
 library(lmtest)

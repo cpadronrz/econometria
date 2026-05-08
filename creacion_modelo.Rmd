@@ -191,14 +191,14 @@ summary(modelo_arima)
 
 ```{r}
 library(tseries)
-jarque.bera.test(residuals(modelo_arima_ajustado))
+jarque.bera.test(residuals(modelo_arima))
 ```
 
 ## Homocedasticidad de los residuos
 
 ```{r}
 library(FinTS)
-ArchTest(residuals(modelo_arima_ajustado))
+ArchTest(residuals(modelo_arima))
 ```
 
 

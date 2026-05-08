@@ -145,7 +145,7 @@ summary(ur_imp)
 # Modelo
 
 ```{r}
-modelo_dif <- lm(diff(salario)[-1] ~ diff(pib)[-1] + ebe[-1][-1] + diff(paro)[-1] + diff(diff(smi)) + impuestos_sub[-2], data = datos)
+modelo_dif <- lm(diff(salario)[-1] ~ diff(pib)[-1] + ebe[-1][-1] + diff(paro)[-1] + diff(diff(smi)) + impuestos_sub[-1][-1], data = datos)
 
 summary(modelo_dif)
 ```
@@ -249,7 +249,7 @@ grangertest(d_salario ~ d_ebe_lag1, order = 1, data = datos_reg)
 Los beneficios no ayudan a predecir el salario mejor de lo que lo hace el propio pasado del salario por sí solo.
 
 
-# Pruebas de diagnóstico (modelo final) ??
+# Pruebas de diagnóstico (modelo final)
 
 Normalidad de residuos
 
@@ -285,7 +285,7 @@ residuos_p <- residuals(modelo_mcg, type = "normalized")
 
 # 2. Creamos un modelo lineal "ficticio" usando esos residuos como Y
 # Esto le permite a bptest saber qué variables explicativas usar
-modelo_para_test <- lm(residuos_p ~ d_pib_lag1 + d_paro_lag1 + d_prod_lag1, data = as.data.frame(datos_reg))
+modelo_para_test <- lm(residuos_p ~ d_pib_lag1 + d_paro_lag1 + d_pib_lag1, data = as.data.frame(datos_reg))
 
 # 3. Aplicamos el test directamente sobre ese modelo
 library(lmtest)
