@@ -253,8 +253,6 @@ Los beneficios no ayudan a predecir el salario mejor de lo que lo hace el propio
 
 Normalidad de residuos
 
-# Shapiro o Kolmogorov?
-
 ```{r}
 # Extraemos los residuos ponderados (los "limpios")
 res_finales <- residuals(modelo_mcg, type = "normalized")

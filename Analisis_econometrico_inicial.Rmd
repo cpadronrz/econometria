@@ -207,11 +207,10 @@ grangertest(d_salario ~ d_prod_lag1, order = 1, data = datos_reg)
 La productividad no ayuda a predecir el salario mejor de lo que lo hace el propio pasado del salario por sí solo.
 
 
-# Pruebas de diagnóstico (modelo final) ??
+# Pruebas de diagnóstico (modelo final)
 
 Normalidad de residuos
 
-# Shapiro o Kolmogorov?
 
 ```{r}
 # Extraemos los residuos ponderados (los "limpios")

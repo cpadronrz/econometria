@@ -12,7 +12,7 @@
 
 <meta name="date" content="2026-03-30" />
 
-<title>Pruebas estadísticas iniciales</title>
+<title>Analisis econometrico SMI</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -349,7 +349,7 @@ display: none;
 
 
 
-<h1 class="title toc-ignore">Pruebas estadísticas iniciales</h1>
+<h1 class="title toc-ignore">Analisis econometrico SMI</h1>
 <h4 class="date">2026-03-30</h4>
 
 </div>
@@ -1039,11 +1039,6 @@ summary(modelo_mcg)</code></pre>
 ## Residual standard error: 163.6604 
 ## Degrees of freedom: 62 total; 58 residual</code></pre>
 </div>
-<div id="al-aplicar-mínimos-cuadrados-generalizados-mcg-hemos-corregido-la-estructura-del-error-y-ahora-aparecen-variables-estadísticamente-significativas-mal" class="section level1">
-<h1>Al aplicar Mínimos Cuadrados Generalizados (MCG), hemos corregido la
-estructura del error y ahora aparecen variables estadísticamente
-significativas –&gt; MAL</h1>
-</div>
 <div id="test-de-causalidad-de-granger" class="section level1">
 <h1>Test de causalidad de Granger</h1>
 <p>H0: Los valores pasados de X no ayudan a predecir el valor de Y</p>
@@ -1061,11 +1056,8 @@ grangertest(d_salario ~ d_ebe_lag1, order = 1, data = datos_reg)</code></pre>
 hace el propio pasado del salario por sí solo.</p>
 </div>
 <div id="pruebas-de-diagnóstico-modelo-final" class="section level1">
-<h1>Pruebas de diagnóstico (modelo final) ??</h1>
+<h1>Pruebas de diagnóstico (modelo final)</h1>
 <p>Normalidad de residuos</p>
-</div>
-<div id="shapiro-o-kolmogorov" class="section level1">
-<h1>Shapiro o Kolmogorov?</h1>
 <pre class="r"><code># Extraemos los residuos ponderados (los &quot;limpios&quot;)
 res_finales &lt;- residuals(modelo_mcg, type = &quot;normalized&quot;)
 

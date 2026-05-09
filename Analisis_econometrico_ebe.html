@@ -951,11 +951,8 @@ grangertest(d_salario ~ d_ebe_lag1, order = 1, data = datos_reg)</code></pre>
 hace el propio pasado del salario por sí solo.</p>
 </div>
 <div id="pruebas-de-diagnóstico-modelo-final" class="section level1">
-<h1>Pruebas de diagnóstico (modelo final) ??</h1>
+<h1>Pruebas de diagnóstico (modelo final)</h1>
 <p>Normalidad de residuos</p>
-</div>
-<div id="shapiro-o-kolmogorov" class="section level1">
-<h1>Shapiro o Kolmogorov?</h1>
 <pre class="r"><code># Extraemos los residuos ponderados (los &quot;limpios&quot;)
 res_finales &lt;- residuals(modelo_mcg, type = &quot;normalized&quot;)
 
