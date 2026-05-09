@@ -1,10 +1,10 @@
-# Análisis de la dinámica salarial ante variaciones en el PIB, la productividad y la tasa de desempleo (2008-2023)
+# Análisis de la dinámica salarial ante variaciones en el PIB, la productividad y la tasa de desempleo (2008-2023) 📊
 
 Este repositorio contiene el código, los datos y el análisis econométrico realizado para el estudio de los salarios en España, desarrollado en el marco del 
 **Grado en Estadística Aplicada** de la Universidad Complutense de Madrid, utilizando datos oficiales de la **Contabilidad Nacional Trimestral (INE)** y estadísticas del 
 **Ministerio de Trabajo**. 
 
-## 📊 Resumen del Proyecto
+## 📋 Resumen del Proyecto
 El objetivo principal es entender cómo reaccionan los salarios ante la marcha de la economía y la situación de las empresas en España.El horizonte temporal abarca desde el primer trimestre de 2008 hasta el cuarto de 2023, capturando ciclos económicos críticos como la crisis financiera, la recuperación post-2014 y el shock del COVID-19.
 
 ### Hallazgos Principales:
